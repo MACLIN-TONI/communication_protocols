@@ -1,4 +1,6 @@
 VCD info: dumpfile waves/dump.vcd opened for output.
+VCD warning: tb/tb_UART_RX.v:40: $dumpfile called after $dumpvars started,
+                                 using existing file (waves/dump.vcd).
 VCD warning: tb/tb_UART_TX.v:23: $dumpfile called after $dumpvars started,
                                  using existing file (waves/dump.vcd).
 VCD warning: tb/tb_synchronizer.v:16: $dumpfile called after $dumpvars started,

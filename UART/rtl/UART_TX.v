@@ -11,8 +11,9 @@ module UART_TX #(
 );
     
     parameter integer BIT_PERIOD = CLK_FREQ / BAUD_RATE;
-
-    reg [$clog2(BIT_PERIOD)-1:0] bcount;
+    parameter integer COUNT_BITS = (BIT_PERIOD <=1 ) ? 1 : $clog2(BIT_PERIOD);
+    
+    reg [COUNT_BITS-1:0] bcount;
     reg [3:0] dcount; 
 
     parameter IDLE = 3'b000;
@@ -35,7 +36,7 @@ module UART_TX #(
 
         else if (state == IDLE && t_ready == 1) begin
             state <= START;
-            t_data = data_in;
+            t_data <= data_in;
             bcount <= 0;
         end
 
@@ -82,6 +83,9 @@ module UART_TX #(
                 tx = t_data[0];
                 if(dcount == 8) begin
                     next = PARITY;
+                end
+                else begin
+                    next = DATA;
                 end
             end
             PARITY: begin

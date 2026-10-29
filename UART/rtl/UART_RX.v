@@ -11,8 +11,8 @@ module UART_RX #(
 );
 
     parameter integer BIT_PERIOD = CLK_FREQ / BAUD_RATE;
-
-    reg [$clog2(BIT_PERIOD)-1:0] bcount;
+    parameter integer COUNT_BITS = (BIT_PERIOD <=1 ) ? 1 : $clog2(BIT_PERIOD);
+    reg [COUNT_BITS-1:0] bcount;
     reg [3:0] dcount;
 
     parameter IDLE = 2'b00;
@@ -37,6 +37,11 @@ module UART_RX #(
         else if (state == IDLE && rx == 0) begin
             state <= START;
             bcount <= 0;
+        end
+        else if(state == START && (bcount == BIT_PERIOD/2) && rx == 1) begin
+            state <= IDLE;
+            rx_valid = 0;
+            rx_error = 1;
         end
         else if (bcount == BIT_PERIOD-1) begin
             bcount <= 0;
@@ -75,30 +80,53 @@ module UART_RX #(
                 rx_error = 0;
             end
             START: begin
-                if((bcount == BIT_PERIOD/2) && rx == 1) begin
-                    next = IDLE;
-                    rx_valid = 0;
-                    rx_error = 1;
+                next = DATA;
+                rx_valid = 0;
+                rx_error = 0;
+            end
+            DATA: begin
+                if(dcount == 9) begin
+                    next = STOP;
+                    if(bcount == BIT_PERIOD/2) begin
+                        r_data[8] = rx;
+                    end
+                    else begin
+                        r_data = r_data;
+                    end
+                end
+                else if(bcount == BIT_PERIOD/2) begin
+                    r_data[8] = rx;
                 end
                 else begin
                     next = DATA;
                 end
             end
-            DATA: begin
-                if(dcount == 9) begin
-                    next = STOP;
-                end
-                else if(bcount == BIT_PERIOD/2) begin
-                    r_data[8] = rx;
-                end
-            end
             STOP: begin
-                data_out = r_data[7:0];
-                if (rx==0) begin
-                    next = START;
-                end
-                else begin
+                // data_out = r_data[7:0];
+                // if (rx==0) begin
+                //     next = START;
+                // end
+                // else begin
+                //     next = IDLE;
+                // end
+                if(bcount == BIT_PERIOD/2 && rx==0) begin
                     next = IDLE;
+                    rx_valid = 1'b0;
+                end
+                else if(^r_data) begin
+                    next = IDLE;
+                    rx_error = 1'b1;
+                end
+                else if(!(^r_data)) begin
+                    data_out = r_data[7:0];
+                    rx_error = 1'b0;
+                    rx_valid = 1'b1;
+                    if(rx ==0) begin
+                        next = START;
+                    end
+                    else begin
+                        next = IDLE;
+                    end
                 end
             end
         endcase
