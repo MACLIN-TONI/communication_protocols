@@ -29,7 +29,7 @@ module tb_UART_TX;
         areset_n = 0;
         t_ready = 0;
         data_in = 0;
-        forever #5 clk = ~clk;
+        forever #1 clk = ~clk;
     end
 
     initial begin
