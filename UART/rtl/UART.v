@@ -13,7 +13,7 @@ module UART #(
     output rx_valid,
     output rx_error
 );
-    //wire syn_rx;
+    wire syn_rx;
 
     UART_TX #(
         .CLK_FREQ(CLK_FREQ),
