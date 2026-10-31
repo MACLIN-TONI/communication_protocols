@@ -26,7 +26,7 @@ module tb_UART;
     integer FAIL = 0;
 
     UART #(
-        .CLK_FREQ(100),
+        .CLK_FREQ(250),
         .BAUD_RATE(5)
     ) dut1 (
         .clk(clk1),
@@ -67,15 +67,15 @@ module tb_UART;
         areset_n1 = 0;
         t_ready1 =0;
         data_in1 = 0;
-        forever #0.5 clk1 = ~clk1; 
+        forever #0.002 clk1 = ~clk1; 
     end
 
     initial begin
-        clk2 = 0;
+        #0.010 clk2 = 0;
         areset_n2 = 0;
         t_ready2 =0;
         data_in2 = 0;
-        forever #1 clk2 = ~clk2; 
+        forever #0.010 clk2 = ~clk2; 
     end
 
     initial begin
