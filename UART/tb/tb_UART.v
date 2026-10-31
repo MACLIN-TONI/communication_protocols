@@ -78,6 +78,21 @@ module tb_UART;
         forever #0.010 clk2 = ~clk2; 
     end
 
+    task check;
+        input [7:0] t_data_in;
+        input [7:0] exp_data_out;
+        begin
+            if(t_data_in == exp_data_out) begin
+            $display("PASS | data_in = %h | data_out =%h ",t_data_in,exp_data_out);
+            PASS = PASS + 1;
+        end
+        else begin
+            $display("FAIL | data_in = %h | data_out =%h",t_data_in,exp_data_out);
+            FAIL = FAIL + 1;
+        end
+        end
+    endtask
+
     initial begin
         #10;
         areset_n1 = 1;
@@ -88,12 +103,39 @@ module tb_UART;
         #2;
         @(negedge clk1) t_ready1=1;
         @(negedge clk2) t_ready2=1;
-        #200;
+        #199; 
+        check(data_in1,data_out2);
+        check(data_in2,data_out1);
+        #1;
         data_in1 = 8'b11111111;
         data_in2 = 8'b00000000;
-        #200;
+        #199; 
+        check(data_in1,data_out2);
+        check(data_in2,data_out1);
+        #1;
         data_in1 = 8'b11100000;
         data_in2 = 8'b00011111;
+        #199; 
+        check(data_in1,data_out2);
+        check(data_in2,data_out1);
+        #1;
+        data_in1 = 8'b10000001;
+        data_in2 = 8'b01111110;
+        #199; 
+        check(data_in1,data_out2);
+        check(data_in2,data_out1);
+        #1;
+        data_in1 = 8'b10101010;
+        data_in2 = 8'b01010101;
+        #199; 
+        check(data_in1,data_out2);
+        check(data_in2,data_out1);
+        
+        
+
+        $display("SUMMARY");
+        $display("PASS = %d ",PASS);
+        $display("FAIL = %d", FAIL);
 
         #2000;
 

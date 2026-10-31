@@ -5,4 +5,17 @@ VCD warning: tb/tb_UART_TX.v:23: $dumpfile called after $dumpvars started,
                                  using existing file (waves/dump.vcd).
 VCD warning: tb/tb_synchronizer.v:16: $dumpfile called after $dumpvars started,
                                       using existing file (waves/dump.vcd).
+PASS | data_in = f0 | data_out =f0 
+PASS | data_in = 0f | data_out =0f 
+PASS | data_in = ff | data_out =ff 
+PASS | data_in = 00 | data_out =00 
+PASS | data_in = e0 | data_out =e0 
+PASS | data_in = 1f | data_out =1f 
+PASS | data_in = 81 | data_out =81 
+PASS | data_in = 7e | data_out =7e 
+PASS | data_in = aa | data_out =aa 
+PASS | data_in = 55 | data_out =55 
+SUMMARY
+PASS =          10 
+FAIL =           0
 tb/tb_UART_TX.v:47: $finish called at 1076000 (1ps)
