@@ -1,0 +1,2 @@
+VCD info: dumpfile waves/dump.vcd opened for output.
+tb/tb_I2C.v:164: $finish called at 530000 (1ps)
