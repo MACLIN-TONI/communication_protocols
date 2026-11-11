@@ -6,7 +6,8 @@ module tb_I2C_master;
     reg start;
     reg rw;
     reg [6:0] slave_addr;
-    reg [7:0] tx_data;
+    reg [7:0] tx_data_m;
+    reg [7:0] tx_data_s;
     
     tri1 SCL;
     tri1 SDA;
@@ -14,7 +15,8 @@ module tb_I2C_master;
     wire done;
     wire ack_error;
 
-    wire [7:0] rx_data;
+    wire [7:0] rx_data_m;
+    wire [7:0] rx_data_s;
 
     I2C_master dut (
     .clk(clk),
@@ -22,7 +24,8 @@ module tb_I2C_master;
     .start(start),
     .rw(rw),
     .slave_addr(slave_addr),
-    .tx_data(tx_data),
+    .tx_data(tx_data_m),
+    .rx_data(rx_data_m),
     .SCL(SCL),
     .SDA(SDA),
     .busy(busy),
@@ -35,7 +38,8 @@ module tb_I2C_master;
         .areset_n(areset_n),
         .SCL(SCL),
         .SDA(SDA),
-        .rx_data(rx_data)
+        .tx_data(tx_data_s),
+        .rx_data(rx_data_s)
     );
 
     initial begin
@@ -49,7 +53,8 @@ module tb_I2C_master;
         start = 0;
         rw = 0;
         slave_addr = 0;
-        tx_data = 0;
+        tx_data_m = 0;
+        tx_data_s = 0;
         
         forever #1 clk = ~clk;
     end
@@ -58,9 +63,10 @@ module tb_I2C_master;
         #1 areset_n = 1;
         @(negedge clk);
         start = 1;
-        rw = 0;
+        rw = 1;
         slave_addr = 7'b1001011;
-        tx_data = 8'b10101011;
+        tx_data_m = 8'b10101011;
+        tx_data_s = 8'b11001111;
 
 
 

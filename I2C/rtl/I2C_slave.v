@@ -3,13 +3,15 @@ module I2C_slave (
     input areset_n,
     inout SCL,
     inout SDA,
+    input [7:0] tx_data,
     output reg [7:0] rx_data
 );
     reg scl_low;
     reg sda_low;
 
     reg [6:0] s_addr;
-    reg [7:0] data;
+    reg [7:0] rdata;
+    reg [7:0] tdata;
 
     assign SCL = (scl_low) ? 1'b0 : 1'bz;
     assign SDA = (sda_low) ? 1'b0 : 1'bz;
@@ -55,13 +57,15 @@ module I2C_slave (
             check <= 0;
             rw <= 0;
             rx_data <= 0;
-            data <= 0;
+            tdata <= 0;
+            rdata <= 0;
         end
         else begin
             case(state) 
                 IDLE: begin
                     if(!SDA && prev_sda && SCL) begin
                         state <= SLAVE_ADDR_READ;
+                        tdata <= tx_data;
                     end
                     else begin
                         state <= IDLE;
@@ -109,6 +113,9 @@ module I2C_slave (
                                 sda_low <= 0;
                                 if(rw) begin
                                     state <= DATA_TX;
+                                    tdata <= {tdata[6:0],tdata[7]};
+                                    sda_low <= (tdata[7]) ? 1'b0: 1'b1;
+                                    bcount <= bcount + 1;
                                 end
                                 else begin
                                     state <= DATA_RX;
@@ -151,8 +158,8 @@ module I2C_slave (
                         scl_low <= 1;
                     end
                     else if(SCL && !prev_scl) begin
-                        data <= {data[6:0],data[7]};
-                        data[0] <= SDA;
+                        rdata <= {rdata[6:0],rdata[7]};
+                        rdata[0] <= SDA;
                         bcount <= bcount + 1; 
                     end
                     else begin
@@ -164,7 +171,7 @@ module I2C_slave (
                     sda_low <= 1;
                     check <= 1;
                     if(check == 1) begin
-                        rx_data <= data;
+                        rx_data <= rdata;
                         scl_low <= 0;
                         if(!SCL && prev_scl) begin
                             sda_low <= 0;
@@ -180,6 +187,31 @@ module I2C_slave (
                         scl_low <= 1;
                     end
 
+                end
+
+                DATA_TX: begin
+                    if((bcount == 8) && (~SCL && prev_scl)) begin
+                        state <= MDATA_ACK;
+                        sda_low <= 0;
+                        bcount <= 0;
+                    end
+                    else if (~SCL && prev_scl) begin
+                        sda_low <= (tdata[7]) ? 1'b0: 1'b1;
+                        tdata <= {tdata[6:0],tdata[7]};
+                        bcount <= bcount + 1;
+                    end
+                    else begin
+                        state <= DATA_TX;
+                    end
+                end
+
+                MDATA_ACK: begin
+                    if(SCL && !prev_scl) begin
+                        state <= IDLE;
+                    end
+                    else begin
+                        state <= MDATA_ACK;
+                    end
                 end
 
             endcase
