@@ -1,10 +1,13 @@
-module I2C_slave (
+module I2C_slave #(
+    parameter BYTE_COUNT = 4
+)(
     input clk, 
     input areset_n,
     inout SCL,
     inout SDA,
-    input [7:0] tx_data,
-    output reg [7:0] rx_data
+    input [7:0] tx_data [0:BYTE_COUNT-1],
+    output reg [7:0] rx_data [0:BYTE_COUNT-1],
+    output reg [7:0] data_out
 );
     reg scl_low;
     reg sda_low;
@@ -12,6 +15,9 @@ module I2C_slave (
     reg [6:0] s_addr;
     reg [7:0] rdata;
     reg [7:0] tdata;
+
+    reg [2:0] tx_count;
+    reg [2:0] rx_count;
 
     assign SCL = (scl_low) ? 1'b0 : 1'bz;
     assign SDA = (sda_low) ? 1'b0 : 1'bz;
@@ -26,6 +32,9 @@ module I2C_slave (
     parameter MDATA_ACK =7;
     parameter MDATA_NACK =8;
     parameter STOP = 9;
+    parameter REG_RX = 10;
+    parameter SREG_ACK = 11;
+    parameter RSTART = 12;
 
     reg rw;
     reg check;
@@ -56,16 +65,27 @@ module I2C_slave (
             s_addr <= 0;
             check <= 0;
             rw <= 0;
-            rx_data <= 0;
+            rx_data[0] = 0;
+            rx_data[0] = 0;
+            rx_data[1] = 0;
+            rx_data[1] = 0;
+            rx_data[2] = 0;
+            rx_data[2] = 0;
+            rx_data[3] = 0;
+            rx_data[3] = 0;
             tdata <= 0;
             rdata <= 0;
+            tx_count <= 0;
+            rx_count <= 0;
+            data_out <= 0;
         end
         else begin
             case(state) 
                 IDLE: begin
                     if(!SDA && prev_sda && SCL) begin
                         state <= SLAVE_ADDR_READ;
-                        tdata <= tx_data;
+                        tx_count <= 0;
+                        tdata <= tx_data[tx_count];
                     end
                     else begin
                         state <= IDLE;
@@ -152,7 +172,13 @@ module I2C_slave (
                     end
                 end
                 DATA_RX: begin
-                    if(bcount == 8 && !SCL && prev_scl) begin
+
+                    if(SCL && !prev_sda && SDA) begin
+                        state <= IDLE;
+                        rx_count <= 0;
+                        bcount <= 0;
+                    end
+                    else if(bcount == 8 && !SCL && prev_scl) begin
                         bcount <= 0;
                         state <= SDATA_ACK;
                         scl_low <= 1;
@@ -171,11 +197,13 @@ module I2C_slave (
                     sda_low <= 1;
                     check <= 1;
                     if(check == 1) begin
-                        rx_data <= rdata;
+                        rx_data[rx_count] <= rdata;
+                        data_out <= rdata;
                         scl_low <= 0;
                         if(!SCL && prev_scl) begin
                             sda_low <= 0;
-                            state <= IDLE;
+                            rx_count <= rx_count + 1;
+                            state <= DATA_RX;
                             check <= 0;
                         end
                         else begin
@@ -207,10 +235,26 @@ module I2C_slave (
 
                 MDATA_ACK: begin
                     if(SCL && !prev_scl) begin
-                        state <= IDLE;
+                        if(SDA) begin
+                            check <= 0;
+                        end
+                        else begin
+                            check <= 1;
+                            tx_count <= tx_count + 1;
+                            tdata <= tx_data[tx_count + 1];
+                        end
                     end
-                    else begin
-                        state <= MDATA_ACK;
+                    else if (!SCL && prev_scl) begin
+                        if(check) begin
+                            state <= DATA_TX;
+                            sda_low <= (tdata[7]) ? 1'b0: 1'b1;
+                            tdata <= {tdata[6:0],tdata[7]};
+                            bcount <= bcount + 1;
+                        end
+                        else begin
+                            state <= IDLE;
+                            tx_count <= 0;
+                        end
                     end
                 end
 

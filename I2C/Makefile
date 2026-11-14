@@ -1,6 +1,6 @@
 DUT ?= I2C_master
 
-RTL = rtl/$(DUT).v rtl/I2C_slave.v
+RTL = rtl/$(DUT).v rtl/I2C_slave.v rtl/I2C_slave_reg.v
 TB = tb/tb_$(DUT).v
 TOP = tb_$(DUT)
 SIM = sim/sim.out
