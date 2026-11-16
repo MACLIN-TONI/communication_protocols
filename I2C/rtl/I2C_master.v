@@ -124,6 +124,7 @@ module I2C_master #(
                             tx_count <= 0;
                             tdata <= tx_data[tx_count];
                             
+                            
                         end
                         else begin
                             tbuf <= tbuf + 1;
@@ -141,6 +142,7 @@ module I2C_master #(
 
                 START: begin
                     scl_low <= 1;
+                    reg_addr <= register_addr;
                     state <= SLAVE_ADDR;
                     r_w <= (reg_read) ? 1'b0 : rw;
                     count <= 0;

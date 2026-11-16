@@ -9,6 +9,9 @@ Slave Memory| addr = 10 | data_out = xxxxxxxx
 Slave Memory| addr = 11 | data_out = xxxxxxxx
 -----------------------------------------------
 ----------Slave_1 Memory After Transmission--------
+-----------------------------------------------
+Slave_1 addr = 1001011
+-----------------------------------------------
 Slave Memory| addr = 00 | data_out = 11110000
 Slave Memory| addr = 01 | data_out = 00001111
 Slave Memory| addr = 10 | data_out = 10101010
@@ -24,10 +27,25 @@ Master Memory| addr = 10 | data_out = xxxxxxxx
 Master Memory| addr = 11 | data_out = xxxxxxxx
 -----------------------------------------------
 ----------Master_1 Memory After Transmission--------
+-----------------------------------------------
+Slave_1 addr = 1001011
+-----------------------------------------------
 Master Memory| addr = 00 | data_out = 11001100
 Master Memory| addr = 01 | data_out = 00110011
 Master Memory| addr = 10 | data_out = 10010001
 Master Memory| addr = 11 | data_out = 11101110
 -----------------------------------------------
-state = 0000
-tb/tb_I2C_master.v:228: $finish called at 282175 (1ps)
+-------------------------------------------------
+------Master_1 reading from Slave_2 Register-----
+-------------------------------------------------
+----------Master_1 Memory After Transmission--------
+-----------------------------------------------
+Slave_2 addr = 1110011
+Slave_2 Register addr = 10010001
+-----------------------------------------------
+Master Memory| addr = 00 | data_out = 10000001
+Master Memory| addr = 01 | data_out = 11111111
+Master Memory| addr = 10 | data_out = 00000000
+Master Memory| addr = 11 | data_out = 11101110
+-----------------------------------------------
+tb/tb_I2C_master.v:322: $finish called at 324575 (1ps)

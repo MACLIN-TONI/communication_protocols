@@ -3,21 +3,22 @@ module I2C_slave_reg #(
 )(
     input clk, 
     input areset_n,
+    input wr_en,
+    input rd_en,
+    input [1:0] mem_addr,
     inout SCL,
     inout SDA,
-    input [7:0] tx_data [0:BYTE_COUNT-1],
-    output reg [7:0] rx_data [0:BYTE_COUNT-1]
+    input [7:0] data_in,
+    output reg [7:0] data_out
 );
     reg scl_low;
     reg sda_low;
     reg [6:0] s_addr;
-    reg [7:0] rdata;
     reg [7:0] tdata;
 
     reg [7:0] reg_addr;
 
     reg [2:0] tx_count;
-    reg [2:0] rx_count;
 
     assign SCL = (scl_low) ? 1'b0 : 1'bz;
     assign SDA = (sda_low) ? 1'b0 : 1'bz;
@@ -42,6 +43,25 @@ module I2C_slave_reg #(
     reg prev_scl;
     reg prev_sda;
 
+    reg [7:0] tx_data [0:BYTE_COUNT-1];
+
+    always @(posedge clk , negedge areset_n) begin
+        if(!areset_n) begin
+            data_out <= 0;
+        end
+        else begin
+            if(wr_en) begin
+                tx_data[mem_addr] <= data_in;
+            end
+            else if (rd_en) begin
+                data_out <= tx_data[mem_addr];
+            end
+            else begin
+                data_out <= data_out;
+            end
+        end
+    end
+
     always @(posedge clk, negedge areset_n) begin
         if(!areset_n) begin
             prev_scl <= 0;
@@ -63,14 +83,8 @@ module I2C_slave_reg #(
             s_addr <= 0;
             check <= 0;
             rw <= 0;
-            rx_data[0] = 0;
-            rx_data[1] = 0;
-            rx_data[2] = 0;
-            rx_data[3] = 0;
             tdata <= 0;
-            rdata <= 0;
             tx_count <= 0;
-            rx_count <= 0;
             reg_addr <= 0;
         end
         else begin
@@ -119,7 +133,7 @@ module I2C_slave_reg #(
                     end
                 end
                 SADDR_ACK: begin
-                    if(s_addr == 7'b1001011) begin
+                    if(s_addr == 7'b1110011) begin
                         sda_low <= 1;
                         check <= 1;
                         if(check == 1) begin
