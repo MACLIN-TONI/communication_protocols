@@ -3,10 +3,12 @@ module I2C_slave #(
 )(
     input clk, 
     input areset_n,
+    input wr_en,
+    input rd_en,
+    input [1:0] mem_addr,
     inout SCL,
     inout SDA,
-    input [7:0] tx_data [0:BYTE_COUNT-1],
-    output reg [7:0] rx_data [0:BYTE_COUNT-1],
+    input [7:0] data_in,
     output reg [7:0] data_out
 );
     reg scl_low;
@@ -43,6 +45,25 @@ module I2C_slave #(
     reg [4:0] bcount;
     reg prev_scl;
     reg prev_sda;
+    reg [7:0] rx_data [0:BYTE_COUNT-1];
+    reg [7:0] tx_data [0:BYTE_COUNT-1];
+
+    always @(posedge clk , negedge areset_n) begin
+        if(!areset_n) begin
+            data_out <= 0;
+        end
+        else begin
+            if(wr_en) begin
+                tx_data[mem_addr] <= data_in;
+            end
+            else if (rd_en) begin
+                data_out <= rx_data[mem_addr];
+            end
+            else begin
+                data_out <= data_out;
+            end
+        end
+    end
 
     always @(posedge clk, negedge areset_n) begin
         if(!areset_n) begin
@@ -65,19 +86,10 @@ module I2C_slave #(
             s_addr <= 0;
             check <= 0;
             rw <= 0;
-            rx_data[0] = 0;
-            rx_data[0] = 0;
-            rx_data[1] = 0;
-            rx_data[1] = 0;
-            rx_data[2] = 0;
-            rx_data[2] = 0;
-            rx_data[3] = 0;
-            rx_data[3] = 0;
             tdata <= 0;
             rdata <= 0;
             tx_count <= 0;
             rx_count <= 0;
-            data_out <= 0;
         end
         else begin
             case(state) 
@@ -198,7 +210,6 @@ module I2C_slave #(
                     check <= 1;
                     if(check == 1) begin
                         rx_data[rx_count] <= rdata;
-                        data_out <= rdata;
                         scl_low <= 0;
                         if(!SCL && prev_scl) begin
                             sda_low <= 0;

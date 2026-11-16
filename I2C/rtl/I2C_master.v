@@ -3,13 +3,15 @@ module I2C_master #(
 ) (
     input clk,
     input areset_n,
+    input wr_en,
+    input rd_en,
+    input [1:0] mem_addr,
     input start,
     input rw,
     input reg_read,
     input  [6:0] slave_addr,
-    input  [7:0] r_addr,
-    input  [7:0] tx_data [0:BYTE_COUNT-1],
-    output reg [7:0] rx_data [0:BYTE_COUNT-1],
+    input  [7:0] register_addr,
+    input  [7:0] data_in,
     output reg [7:0] data_out,
     inout SCL,
     inout SDA,
@@ -34,20 +36,21 @@ module I2C_master #(
     assign SCL = (scl_low) ? 1'b0 : 1'bz;
     assign SDA = (sda_low) ? 1'b0 : 1'bz;
 
-    parameter IDLE = 0;
-    parameter START = 1;
-    parameter SLAVE_ADDR = 2;
-    parameter RW =3;
-    parameter SADDR_ACK = 4;
-    parameter DATA_TX = 5;
-    parameter SDATA_ACK = 6;
-    parameter DATA_RX = 7;
-    parameter MDATA_ACK =8;
-    parameter MDATA_NACK =9;
-    parameter STOP = 10;
-    parameter REG_TX = 11;
-    parameter SREG_ACK =12;
-    parameter RSTART = 13;
+    localparam IDLE = 0; 
+    localparam START = 1;
+    localparam SLAVE_ADDR = 2;
+    localparam RW = 3;
+    localparam SADDR_ACK = 4;
+    localparam DATA_TX = 5;
+    localparam SDATA_ACK = 6;
+    localparam DATA_RX = 7;
+    localparam MDATA_ACK = 8;
+    localparam MDATA_NACK = 9;
+    localparam STOP = 10;
+    localparam REG_TX = 11;
+    localparam SREG_ACK = 12;
+    localparam RSTART = 13;
+    localparam WAIT = 14;
 
     reg check;
     reg [3:0] state;
@@ -55,13 +58,36 @@ module I2C_master #(
     reg [4:0] bcount;
     reg [3:0] tbuf;
     reg prev_scl;
+    reg prev_sda;
+
+    reg [7:0] tx_data [0:BYTE_COUNT-1];
+    reg [7:0] rx_data [0:BYTE_COUNT-1];
+
+    always @(posedge clk , negedge areset_n) begin
+        if(!areset_n) begin
+            data_out <= 0;
+        end
+        else begin
+            if(wr_en) begin
+                tx_data[mem_addr] <= data_in;
+            end
+            else if (rd_en) begin
+                data_out <= rx_data[mem_addr];
+            end
+            else begin
+                data_out <= data_out;
+            end
+        end
+    end
 
     always @(posedge clk, negedge areset_n) begin
         if(!areset_n) begin
             prev_scl <= 0;
+            prev_sda <= 0;
         end
         else begin
             prev_scl <= SCL;
+            prev_sda <= SDA;
         end
     end
 
@@ -79,16 +105,11 @@ module I2C_master #(
             busy <= 0;
             done <= 0;
             ack_error <= 0;
-            rx_data[0] = 0;
-            rx_data[1] = 0;
-            rx_data[2] = 0;
-            rx_data[3] = 0;
             check <= 0;
             tx_count <= 0;
             rx_count <= 0;
             reg_check <= 0;
-            reg_addr <= r_addr;
-            data_out <= 0;
+            reg_addr <= register_addr;
         end
         else begin
             case(state) 
@@ -134,8 +155,18 @@ module I2C_master #(
                     else begin
                         count <= count + 1;
                     end
-
-                    if((bcount == 7) && (~SCL && prev_scl)) begin
+                    if (SCL && ~prev_scl) begin
+                        if(SDA != s_addr[0]) begin
+                            state <= WAIT;
+                            bcount <= 0;
+                            scl_low <= 0;
+                            sda_low <= 0;
+                        end
+                        else begin
+                            state <= SLAVE_ADDR;
+                        end
+                    end
+                    else if((bcount == 7) && (~SCL && prev_scl)) begin
                         state <= RW;
                         count <= 1;
                         bcount <= 0;
@@ -159,7 +190,19 @@ module I2C_master #(
                         count <= count + 1;
                     end
 
-                    if(~SCL && prev_scl) begin
+                    if (SCL && ~prev_scl) begin
+                        if(SDA != r_w) begin
+                            state <= WAIT;
+                            bcount <= 0;
+                            scl_low <= 0;
+                            sda_low <= 0;
+                        end
+                        else begin
+                            state <= RW;
+                        end
+                    end
+
+                    else if(~SCL && prev_scl) begin
                         state <= SADDR_ACK;
                         sda_low <= 1;
                     end
@@ -233,7 +276,19 @@ module I2C_master #(
                         count <= count + 1;
                     end
 
-                    if((bcount == 8) && (~SCL && prev_scl)) begin
+                    if (SCL && ~prev_scl) begin
+                        if(SDA != reg_addr[0]) begin
+                            state <= WAIT;
+                            bcount <= 0;
+                            scl_low <= 0;
+                            sda_low <= 0;
+                        end
+                        else begin
+                            state <= REG_TX;
+                        end
+                    end
+
+                    else if((bcount == 8) && (~SCL && prev_scl)) begin
                         state <= SREG_ACK;
                         sda_low <= 1;
                         count <= 1;
@@ -275,6 +330,7 @@ module I2C_master #(
                         if(check) begin
                             state <= RSTART;
                             sda_low <= 0;
+                            count <= 1;
                         end
                         else begin
                             state <= STOP;
@@ -286,11 +342,33 @@ module I2C_master #(
                 end
 
                 RSTART: begin
-                    scl_low <= 0;
-                    sda_low <= 1;
-                    state <= SLAVE_ADDR;
-                    s_addr <= slave_addr;
-                    r_w <= 1;
+                    //scl_low <= 0;
+                    if(count == 5) begin
+                        scl_low <= ~scl_low;
+                        count <= 0;
+                    end
+                    else begin
+                        count <= count + 1;
+                    end
+
+                    if(SCL && !prev_scl) begin
+                        sda_low <= 1;
+                        s_addr <= slave_addr;
+                        r_w <= 1;
+                    end 
+
+                    else if (!SCL && prev_scl) begin
+                        state <= SLAVE_ADDR;
+                        sda_low <= (s_addr[6]) ? 1'b0: 1'b1;
+                        s_addr <= {s_addr[5:0],s_addr[6]};
+                        bcount <= bcount + 1;
+                        count <= 1;
+                    end
+
+                    else begin
+                        state <= RSTART;
+                    end
+                            
                 end
 
                 DATA_TX: begin
@@ -301,8 +379,20 @@ module I2C_master #(
                     else begin
                         count <= count + 1;
                     end
+                    
+                    if (SCL && ~prev_scl) begin
+                        if(SDA != tdata[0]) begin
+                            state <= WAIT;
+                            bcount <= 0;
+                            scl_low <= 0;
+                            sda_low <= 0;
+                        end
+                        else begin
+                            state <= DATA_TX;
+                        end
+                    end
 
-                    if((bcount == 8) && (~SCL && prev_scl)) begin
+                    else if((bcount == 8) && (~SCL && prev_scl)) begin
                         state <= SDATA_ACK;
                         sda_low <= 1;
                         count <= 1;
@@ -419,7 +509,6 @@ module I2C_master #(
                         count <= 0;
                     end
                     else if (SCL && !prev_scl) begin
-                        data_out <= rdata;
                         rx_data[rx_count] <= rdata;
                     end
                     else if (!SCL && prev_scl) begin
@@ -435,6 +524,20 @@ module I2C_master #(
 
                 end
 
+                WAIT: begin
+                    if(SCL && !prev_sda && SDA) begin
+                        state <= START;
+                        sda_low <= 1;
+                        busy <= 1;
+                        s_addr <= slave_addr;
+                        tx_count <= 0;
+                        tdata <= tx_data[tx_count];
+                    end
+                    else begin
+                        state <= WAIT;
+                    end
+                end
+
                 STOP: begin
                     scl_low <= 0;
                     if(!scl_low) begin
@@ -442,6 +545,7 @@ module I2C_master #(
                         state <= IDLE;
                         tx_count <= 0;
                         done <= 0;
+
                     end
                     else begin
                         state <= STOP;

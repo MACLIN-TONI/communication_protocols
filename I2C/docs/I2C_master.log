@@ -1,2 +1,33 @@
 VCD info: dumpfile waves/dump.vcd opened for output.
-tb/tb_I2C_master.v:101: $finish called at 1001000 (1ps)
+-------------------------------------------------
+-----------Master_1 writing to Slave_1----------
+-------------------------------------------------
+--------Slave_1 Memory Before Transmission-------
+Slave Memory| addr = 00 | data_out = xxxxxxxx
+Slave Memory| addr = 01 | data_out = xxxxxxxx
+Slave Memory| addr = 10 | data_out = xxxxxxxx
+Slave Memory| addr = 11 | data_out = xxxxxxxx
+-----------------------------------------------
+----------Slave_1 Memory After Transmission--------
+Slave Memory| addr = 00 | data_out = 11110000
+Slave Memory| addr = 01 | data_out = 00001111
+Slave Memory| addr = 10 | data_out = 10101010
+Slave Memory| addr = 11 | data_out = 10000001
+-----------------------------------------------
+-------------------------------------------------
+-----------Master_1 reading from Slave_1----------
+-------------------------------------------------
+--------Master_1 Memory Before Transmission-------
+Master Memory| addr = 00 | data_out = xxxxxxxx
+Master Memory| addr = 01 | data_out = xxxxxxxx
+Master Memory| addr = 10 | data_out = xxxxxxxx
+Master Memory| addr = 11 | data_out = xxxxxxxx
+-----------------------------------------------
+----------Master_1 Memory After Transmission--------
+Master Memory| addr = 00 | data_out = 11001100
+Master Memory| addr = 01 | data_out = 00110011
+Master Memory| addr = 10 | data_out = 10010001
+Master Memory| addr = 11 | data_out = 11101110
+-----------------------------------------------
+state = 0000
+tb/tb_I2C_master.v:228: $finish called at 282175 (1ps)
