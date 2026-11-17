@@ -36,9 +36,9 @@ Master Memory| addr = 10 | data_out = 10010001
 Master Memory| addr = 11 | data_out = 11101110
 -----------------------------------------------
 -------------------------------------------------
-------Master_1 reading from Slave_2 Register-----
+------Master_2 reading from Slave_2 Register-----
 -------------------------------------------------
-----------Master_1 Memory After Transmission--------
+-------Master_2 Memory After Transmission------
 -----------------------------------------------
 Slave_2 addr = 1110011
 Slave_2 Register addr = 10010001
@@ -46,6 +46,41 @@ Slave_2 Register addr = 10010001
 Master Memory| addr = 00 | data_out = 10000001
 Master Memory| addr = 01 | data_out = 11111111
 Master Memory| addr = 10 | data_out = 00000000
-Master Memory| addr = 11 | data_out = 11101110
+Master Memory| addr = 11 | data_out = 00100100
 -----------------------------------------------
-tb/tb_I2C_master.v:322: $finish called at 324575 (1ps)
+-------Testing Bus Orbitration------
+--------------------------------------------
+-------Master_1 reading from Slave_1------
+--------------------AND-------------------
+-------Master_2 reading from Slave_2------
+--------------------------------------------
+----------Master_1 Memory After Transmission--------
+-----------------------------------------------
+Slave_1 addr = 1110011
+-----------------------------------------------
+Master Memory| addr = 00 | data_out = 00000001
+Master Memory| addr = 01 | data_out = 00000011
+Master Memory| addr = 10 | data_out = 00000111
+Master Memory| addr = 11 | data_out = 00001111
+-----------------------------------------------
+-------Master_2 Loss Control------
+-----------------------------------------------
+Slave_2 addr = 1110011
+Slave_2 Register addr = 10010001
+-----------------------------------------------
+Master Memory| addr = 00 | data_out = 10000001
+Master Memory| addr = 01 | data_out = 11111111
+Master Memory| addr = 10 | data_out = 00000000
+Master Memory| addr = 11 | data_out = 00100100
+-----------------------------------------------
+----Master_2 Memory After Regaining Control-----
+-----------------------------------------------
+Slave_2 addr = 1110011
+Slave_2 Register addr = 10010001
+-----------------------------------------------
+Master Memory| addr = 00 | data_out = 00011111
+Master Memory| addr = 01 | data_out = 00111111
+Master Memory| addr = 10 | data_out = 01111111
+Master Memory| addr = 11 | data_out = 11111111
+-----------------------------------------------
+tb/tb_I2C.v:470: $finish called at 414575 (1ps)

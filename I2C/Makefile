@@ -1,7 +1,7 @@
 DUT ?= I2C_master
 
 RTL = rtl/$(DUT).v rtl/I2C_slave.v rtl/I2C_slave_reg.v
-TB = tb/tb_$(DUT).v 
+TB = tb/tb_I2C.v 
 TOP = tb_$(DUT)
 SIM = sim/sim.out
 WAVE = waves/dump.vcd
